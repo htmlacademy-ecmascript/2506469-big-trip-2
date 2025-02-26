@@ -17,6 +17,7 @@ function calculatesTravelTime(dateFrom, dateTo) {
   return date1.diff(dateFrom, 'minute');
 }
 
+const isEscapeKey = (evt) => evt.keyCode === 27;
 
 function createFormOffersTemplate(pointOffers, point) {
   return pointOffers
@@ -44,4 +45,4 @@ function createEventTypeItem(offers) {
 </div>`).join('');
 }
 
-export { getRandomArrayElement, getRandomInteger, humanizeTaskDueDate, calculatesTravelTime, createFormOffersTemplate, createDestinationList, createEventTypeItem };
+export { getRandomArrayElement, getRandomInteger, humanizeTaskDueDate, calculatesTravelTime, isEscapeKey, createFormOffersTemplate, createDestinationList, createEventTypeItem };
