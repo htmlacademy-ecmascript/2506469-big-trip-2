@@ -52,7 +52,7 @@ export default class PointsListPresenter {
   renderPoint(point) {
 
     const escKeydownHandler = (evt) => {
-      if (isEscapeKey) {
+      if (isEscapeKey(evt)) {
         evt.preventDefault();
         replaceFormToPoint();
         document.removeEventListener('keydown', escKeydownHandler);
