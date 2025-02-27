@@ -1,4 +1,4 @@
-import { createElement } from '../render.js';
+import AbstractView from '../framework/view/abstract-view.js';
 import { humanizeTaskDueDate, calculatesTravelTime } from '../util.js';
 import { TIME_FORMAT, DATE_FORMAT } from '../const.js';
 
@@ -72,26 +72,28 @@ function createPointViewTemplate(point, offers, destinations) {
             </li>`;
 }
 
-export default class PointView {
-  //Опишем конструктор с помощью деструктуризации извлекаем ключ point c описанием точки
-  constructor({ point, offers, destinations }) {
-    this.point = point;
-    this.offers = offers;
-    this.destinations = destinations;
+export default class PointView extends AbstractView {
+  #point = null;
+  #offers = null;
+  #destinations = null;
+  #handleClick = null;
+
+  constructor({ point, offers, destinations, onClick }) {
+    super();//вызываем конструктор родительского класса AbstractView
+    this.#point = point;
+    this.#offers = offers;
+    this.#destinations = destinations;
+    this.#handleClick = onClick;
+    this.element.querySelector('.event__rollup-btn').addEventListener('click', this.#clickHandler);
   }
 
-  getTemplate() {
-    return createPointViewTemplate(this.point, this.offers, this.destinations);
-  }
+  #clickHandler = (evt) => {
+    evt.preventDefault();
+    this.#handleClick();
+  };
 
-  getElement() {
-    if (!this.element) {
-      this.element = createElement(this.getTemplate());
-    }
-    return this.element;
-  }
-
-  removeElement() {
-    this.element = null;
+  get template() {
+    //Передаем аргументом объект с описанием точки
+    return createPointViewTemplate(this.#point, this.#offers, this.#destinations);
   }
 }
