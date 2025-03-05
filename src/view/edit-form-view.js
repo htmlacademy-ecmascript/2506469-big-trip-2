@@ -1,5 +1,5 @@
 import AbstractView from '../framework/view/abstract-view.js';
-import { createFormOffersTemplate, humanizeTaskDueDate, createDestinationList, createEventTypeItem } from '../util.js';
+import { createFormOffersTemplate, humanizeTaskDueDate, createDestinationList, createEventTypeItem } from '../utils/point.js';
 import { DATE_TIME_FORMAT } from '../const.js';
 
 function createEditFormViewTemplate(point, offers, destinations) {

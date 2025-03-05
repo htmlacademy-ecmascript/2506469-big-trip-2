@@ -3,8 +3,10 @@ import FiltersView from '../view/filters-view.js';
 import SortingView from '../view/sorting-view.js';
 import PointsListView from '../view/points-list-view.js';
 import PointView from '../view/point-view.js';
-import { isEscapeKey } from '../util.js';
+import { isEscapeKey } from '../utils/common.js';
 import EditFormView from '../view/edit-form-view.js';
+import NoPointView from '../view/no-point-view.js';
+import { generateFilter } from '../mock/filter.js';
 
 //Создадим класс, включающий в себя отрисовку остальных связанных компонентов
 export default class PointsListPresenter {
@@ -18,9 +20,10 @@ export default class PointsListPresenter {
   #offers = [];
   #destinations = [];
 
-  #filtersView = new FiltersView();
+  #filtersView = null;
   #sortingView = new SortingView();
   #pointsListViewComponent = new PointsListView();
+  #noPointViewComponent = new NoPointView({ messageType: 'EVERYTHING' });
 
   constructor({ container, filtersContainer, pointsModel, offersModel, destinationsModel }) {
     //Данные из main.js сохранили внутри класса
@@ -29,6 +32,9 @@ export default class PointsListPresenter {
     this.#pointsModel = pointsModel;
     this.#offersModel = offersModel;
     this.#destinationsModel = destinationsModel;
+
+    const filters = generateFilter((this.#pointsModel.points));
+    this.#filtersView = new FiltersView({ filters });
   }
 
   init() {
@@ -36,13 +42,17 @@ export default class PointsListPresenter {
     this.#offers = [...this.#offersModel.offers];
     this.#destinations = [...this.#destinationsModel.destinations];
 
-    this.#renderPointsList();
+    this.#renderComponents();
   }
 
-  #renderPointsList() {
+  #renderComponents() {
     render(this.#filtersView, this.#filtersContainer);
     render(this.#sortingView, this.#container);
     render(this.#pointsListViewComponent, this.#container);
+
+    if (this.#points.length === 0) {
+      this.#renderEmptyPointsList();
+    }
 
     for (let i = 0; i < this.#points.length; i++) {
       this.renderPoint(this.#points[i]);
@@ -88,5 +98,9 @@ export default class PointsListPresenter {
     }
 
     render(pointViewComponent, this.#pointsListViewComponent.element);
+  }
+
+  #renderEmptyPointsList() {
+    render(this.#noPointViewComponent, this.#pointsListViewComponent.element);
   }
 }

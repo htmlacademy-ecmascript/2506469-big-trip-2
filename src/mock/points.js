@@ -1,4 +1,4 @@
-import { getRandomArrayElement } from '../util.js';
+import { getRandomArrayElement } from '../utils/common.js';
 
 export const points = [
   {
@@ -14,8 +14,8 @@ export const points = [
   {
     id: '2',
     basePrice: 1200,
-    dateFrom: '2025-08-11T20:58:55.845Z',
-    dateTo: '2025-08-12T12:24:14.375Z',
+    dateFrom: '2024-02-24T20:58:55.845Z',
+    dateTo: '2024-02-28T12:24:14.375Z',
     destination: '1',
     isFavorite: true,
     offers: [],
@@ -24,8 +24,8 @@ export const points = [
   {
     id: '3',
     basePrice: 1300,
-    dateFrom: '2025-09-13T23:53:50.845Z',
-    dateTo: '2025-09-14T18:24:15.375Z',
+    dateFrom: '2024-09-13T23:53:50.845Z',
+    dateTo: '2024-09-14T18:24:15.375Z',
     destination: '3',
     isFavorite: false,
     offers: ['17'],
@@ -38,4 +38,4 @@ function getRandomPoint() {
   return getRandomArrayElement(points);
 }
 
-export {getRandomPoint};
+export { getRandomPoint };
