@@ -1,23 +1,14 @@
 import dayjs from 'dayjs';
-
-function getRandomArrayElement(items) {
-  return items[Math.floor(Math.random() * items.length)];
-}
-
-function getRandomInteger(integer) {
-  return Math.floor(Math.random() * integer);
-}
+import isBetween from 'dayjs/plugin/isBetween';
+dayjs.extend(isBetween);
 
 function humanizeTaskDueDate(dueDate, dateFormat) {
   return dueDate ? dayjs(dueDate).format(dateFormat) : '';
 }
-
 function calculatesTravelTime(dateFrom, dateTo) {
   const date1 = dayjs(dateTo);
   return date1.diff(dateFrom, 'minute');
 }
-
-const isEscapeKey = (evt) => evt.keyCode === 27;
 
 function createFormOffersTemplate(pointOffers, point) {
   return pointOffers
@@ -45,4 +36,19 @@ function createEventTypeItem(offers) {
 </div>`).join('');
 }
 
-export { getRandomArrayElement, getRandomInteger, humanizeTaskDueDate, calculatesTravelTime, isEscapeKey, createFormOffersTemplate, createDestinationList, createEventTypeItem };
+function isPointsPassed(dueDate) {
+  const now = dayjs();
+  return dayjs(dueDate).isBefore(now, 'day');
+}
+
+function isPointsPlanned(dueDate) {
+  const now = dayjs();
+  return dayjs(dueDate).isAfter(now, 'day');
+}
+
+function isPointsCurrent(startDate, endDate) {
+  const now = dayjs();
+  return now.isBetween(dayjs(startDate), dayjs(endDate), 'day', '[]');
+}
+
+export { humanizeTaskDueDate, calculatesTravelTime, createFormOffersTemplate, createDestinationList, createEventTypeItem, isPointsPassed, isPointsPlanned, isPointsCurrent };
