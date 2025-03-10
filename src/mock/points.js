@@ -1,4 +1,5 @@
 import { getRandomArrayElement } from '../utils/common.js';
+import { nanoid } from 'nanoid';
 
 export const points = [
   {
@@ -35,7 +36,10 @@ export const points = [
 
 //Функция для получения рандомных точек
 function getRandomPoint() {
-  return getRandomArrayElement(points);
+  return {
+    ...getRandomArrayElement(points), // Сначала распыляем данные точки
+    id: nanoid()
+  };
 }
 
 export { getRandomPoint };
