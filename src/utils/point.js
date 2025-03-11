@@ -51,4 +51,36 @@ function isPointsCurrent(startDate, endDate) {
   return now.isBetween(dayjs(startDate), dayjs(endDate), 'day', '[]');
 }
 
-export { humanizeTaskDueDate, calculatesTravelTime, createFormOffersTemplate, createDestinationList, createEventTypeItem, isPointsPassed, isPointsPlanned, isPointsCurrent };
+function getWeightForNullDate(dateA, dateB) {
+  if (dateA === null && dateB === null) {
+    return 0;
+  }
+
+  if (dateA === null) {
+    return 1;
+  }
+
+  if (dateB === null) {
+    return -1;
+  }
+
+  return null;
+}
+
+function sortPointByDate(pointA, pointB) {
+  const weight = getWeightForNullDate(pointA.dateTo, pointB.dateTo);
+
+  return weight ?? dayjs(pointB.dateTo).diff(dayjs(pointA.dateTo));
+}
+
+function sortPointByPrice(pointA, pointB) {
+  return pointB.basePrice - pointA.basePrice;
+}
+
+function sortPointByTime(pointA, pointB) {
+  const durationA = calculatesTravelTime(pointA.dateFrom, pointA.dateTo);
+  const durationB = calculatesTravelTime(pointB.dateFrom, pointB.dateTo);
+  return durationB - durationA;
+}
+
+export { humanizeTaskDueDate, calculatesTravelTime, createFormOffersTemplate, createDestinationList, createEventTypeItem, isPointsPassed, isPointsPlanned, isPointsCurrent, sortPointByDate, sortPointByPrice, sortPointByTime };

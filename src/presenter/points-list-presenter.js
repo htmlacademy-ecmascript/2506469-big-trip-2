@@ -6,6 +6,9 @@ import NoPointView from '../view/no-point-view.js';
 import { generateFilter } from '../mock/filter.js';
 import PointPresenter from './point-presenter.js';
 import { updateItem } from '../utils/common.js';
+import { SortType } from '../const.js';
+import { sortPointByDate, sortPointByPrice, sortPointByTime } from '../utils/point.js';
+
 
 //Создадим класс, включающий в себя отрисовку остальных связанных компонентов
 export default class PointsListPresenter {
@@ -19,12 +22,14 @@ export default class PointsListPresenter {
   #offers = [];
   #destinations = [];
 
-  #filtersView = null;
-  #sortingView = new SortingView();
+  #filtersComponent = null;
+  #sortingComponent = null;
   #pointsListComponent = new PointsListView();
   #noPointComponent = new NoPointView({ messageType: 'EVERYTHING' });
 
-  #pointPresenters = new Map();
+  #pointPresenters = new Map();//при замене на Set ошибка, что нет метода set
+  #currentSortType = SortType.DAY;
+  #sourcedPoints = [];
 
   constructor({ container, filtersContainer, pointsModel, offersModel, destinationsModel }) {
     //Данные из main.js сохранили внутри класса
@@ -35,13 +40,16 @@ export default class PointsListPresenter {
     this.#destinationsModel = destinationsModel;
 
     const filters = generateFilter((this.#pointsModel.points));
-    this.#filtersView = new FiltersView({ filters });
+
+    this.#filtersComponent = new FiltersView({ filters });
   }
 
   init() {
     this.#points = [...this.#pointsModel.points];
     this.#offers = [...this.#offersModel.offers];
     this.#destinations = [...this.#destinationsModel.destinations];
+
+    this.#sourcedPoints = [...this.#pointsModel.points];
 
     this.#renderComponents();
   }
@@ -52,25 +60,60 @@ export default class PointsListPresenter {
     this.#renderPointsList();
   }
 
-  #handlePointChange = (updatePoint) => {
-    this.#points = updateItem(this.#points, updatePoint);
-    this.#pointPresenters.get(updatePoint.id).init(updatePoint);
+  #handlePointChange = (updatedPoint) => {
+    this.#points = updateItem(this.#points, updatedPoint);
+    this.#sourcedPoints = updateItem(this.#sourcedPoints, updatedPoint);
+    this.#pointPresenters.get(updatedPoint.id).init(updatedPoint);
   };
 
   #handleModeChange = () => {
     this.#pointPresenters.forEach((presenter) => presenter.resetView());
   };
 
-  #renderFilter() {
-    render(this.#filtersView, this.#filtersContainer);
+  #sortPoints(sortType) {
+    switch (sortType) {
+      case SortType.DAY:
+        this.#points.sort(sortPointByDate);
+        break;
+      case SortType.TIME:
+        this.#points.sort(sortPointByTime);
+        break;
+      case SortType.PRICE:
+        this.#points.sort(sortPointByPrice);
+        break;
+      default:
+        // Запишем в points исходный массив
+        this.#points = [...this.#sourcedPoints];
+    }
+    this.#currentSortType = sortType;
   }
 
+  #handleSortTypeChange = (sortType) => {
+    //Сортируем задачи
+    if (this.#currentSortType === sortType) {
+      return;
+    }
+
+    this.#sortPoints(sortType);
+    //Очищаем список
+    this.#clearPointsList();
+    //Рендерим список заново;
+    this.#renderPointsList();
+  };
+
   #renderSort() {
-    render(this.#sortingView, this.#container);
+    this.#sortingComponent = new SortingView({
+      onSortTypeChange: this.#handleSortTypeChange
+    });
+    render(this.#sortingComponent, this.#container);
+  }
+
+  #renderFilter() {
+    render(this.#filtersComponent, this.#filtersContainer);
   }
 
   #clearPointsList() {
-    this.#pointPresenters.forEach((presenter) => presenter.destrоy());
+    this.#pointPresenters.forEach((presenter) => presenter.destroy());
     this.#pointPresenters.clear();
   }
 
@@ -103,9 +146,5 @@ export default class PointsListPresenter {
 
   #renderEmptyPointsList() {
     render(this.#noPointComponent, this.#pointsListComponent.element);
-  }
-
-  #renderPoints(from, to) {
-    this.#points.slice(from, to).forEach((point) => this.#renderPoint(point));
   }
 }

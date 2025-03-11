@@ -4,7 +4,7 @@ import { isEscapeKey } from '../utils/common.js';
 import EditFormView from '../view/edit-form-view.js';
 
 const Mode = {
-  DEFAULT: 'DEFAULT',
+  VIEW: 'VIEW',
   EDITING: 'EDITING',
 };
 
@@ -17,7 +17,7 @@ export default class PointPresenter {
   #editFormComponent = null;
 
   #point = null;
-  #mode = Mode.DEFAULT;
+  #mode = Mode.VIEW;
 
   #offers = [];
   #destinations = [];
@@ -45,7 +45,7 @@ export default class PointPresenter {
       offers: this.#offers,
       destinations: this.#destinations,
       onClick: () => {
-        this.#replacePointToForm();
+        this.#replaceViewToForm();
         document.addEventListener('keydown', this.#escKeydownHandler);
       },
       onFavoriteClick: this.#handleFavoriteClick,
@@ -69,7 +69,7 @@ export default class PointPresenter {
     }
 
     //Проверям установлен ли режим просмотра
-    if (this.#mode === Mode.DEFAULT) {
+    if (this.#mode === Mode.VIEW) {
       //Заменяем старый компонент на новый
       replace(this.#pointComponent, prevPointComponent);
     }
@@ -91,23 +91,23 @@ export default class PointPresenter {
   }
 
   resetView() {
-    if (this.#mode !== Mode.DEFAULT) {
-      this.#replaceFormToPoint();
+    if (this.#mode !== Mode.VIEW) {
+      this.#replaceFormToView();
     }
   }
 
   //Бывшие функции метода renderPoint стали полноценными функциями
-  #replacePointToForm() {
+  #replaceViewToForm() {
     replace(this.#editFormComponent, this.#pointComponent);
     document.addEventListener('keydown', this.#escKeydownHandler);
     this.#handleModeChange();
     this.#mode = Mode.EDITING;
   }
 
-  #replaceFormToPoint() {
+  #replaceFormToView() {
     replace(this.#pointComponent, this.#editFormComponent);
     document.removeEventListener('keydown', this.#escKeydownHandler);
-    this.#mode = Mode.DEFAULT;
+    this.#mode = Mode.VIEW;
   }
 
   #handleFavoriteClick = () => {
@@ -116,13 +116,13 @@ export default class PointPresenter {
 
   #handleSubmit = (point) => {
     this.#handleDataChange(point);
-    this.#replaceFormToPoint();
+    this.#replaceFormToView();
   };
 
   #escKeydownHandler = (evt) => {
     if (isEscapeKey(evt)) {
       evt.preventDefault();
-      this.#replaceFormToPoint();
+      this.#replaceFormToView();
       document.removeEventListener('keydown', this.#escKeydownHandler);
     }
   };
