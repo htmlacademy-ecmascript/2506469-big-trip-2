@@ -55,10 +55,7 @@ export default class PointPresenter {
       point: this.#point,
       offers: this.#offers,
       destinations: this.#destinations,
-      onSubmit: () => {
-        this.#handleSubmit(this.#point);
-        document.removeEventListener('keydown', this.#escKeydownHandler);
-      },
+      onSubmit: this.#handleSubmit,
     });
 
     //Проверяем не равны ли экзмепляры null
@@ -92,6 +89,7 @@ export default class PointPresenter {
 
   resetView() {
     if (this.#mode !== Mode.VIEW) {
+      this.#editFormComponent.reset(this.#point);
       this.#replaceFormToView();
     }
   }

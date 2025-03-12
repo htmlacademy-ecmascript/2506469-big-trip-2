@@ -1,6 +1,13 @@
-import AbstractView from '../framework/view/abstract-view.js';
+import AbstractStatefulView from '../framework/view/abstract-stateful-view.js';
 import { createFormOffersTemplate, humanizeTaskDueDate, createDestinationList, createEventTypeItem } from '../utils/point.js';
 import { DATE_TIME_FORMAT } from '../const.js';
+
+function createPictures(pictures) {
+  return pictures
+    .map((picture) =>
+      `<img class="event__photo" src="${picture.src}" alt="${picture.description}">`
+    ).join('');
+}
 
 function createEditFormViewTemplate(point, offers, destinations) {
   const { type, basePrice, dateFrom, dateTo } = point;
@@ -9,6 +16,10 @@ function createEditFormViewTemplate(point, offers, destinations) {
 
   const pointTypeOffer = offers.find((offer) => offer.type === point.type);
   const editFormOffersTemplate = createFormOffersTemplate(pointTypeOffer.offers, point.offers);
+
+  const destinationPictures = editFormPointDestination
+    ? createPictures(editFormPointDestination.pictures)
+    : '';
 
   const destinationListTemplate = createDestinationList(destinations);
 
@@ -65,40 +76,85 @@ function createEditFormViewTemplate(point, offers, destinations) {
                   <section class="event__section  event__section--offers">
                     <h3 class="event__section-title  event__section-title--offers">Offers</h3>
                     <div class="event__available-offers">
-                    ${editFormOffersTemplate}
+                    ${offers.length !== 0 ? editFormOffersTemplate : ''}
                     </div>
                   </section>
                   <section class="event__section  event__section--destination">
                     <h3 class="event__section-title  event__section-title--destination">Destination</h3>
                     <p class="event__destination-description">${editFormPointDestination.description}</p>
+                     <div class="event__photos-container">
+                      <div class="event__photos-tape">
+                        ${destinationPictures}
+                      </div>
+                    </div>
                   </section>
                 </section>
               </form>`;
 }
 
-export default class EditFormView extends AbstractView {
-  #point = null;
+export default class EditFormView extends AbstractStatefulView {
   #offers = null;
   #destinations = null;
   #handleSubmit = null;
 
   constructor({ point, offers, destinations, onSubmit }) {
-    super();//вызываем конструктор родительского класса AbstractView
-    this.#point = point;
+    super();
     this.#offers = offers;
     this.#destinations = destinations;
     this.#handleSubmit = onSubmit;
-    this.element.addEventListener('submit', this.#submitHandler);
-    this.element.addEventListener('reset', this.#submitHandler);
+
+    this._setState(EditFormView.parsePointToState(point));
+    this._restoreHandlers();
+  }
+
+  get template() {
+    return createEditFormViewTemplate(this._state, this.#offers, this.#destinations);
+  }
+
+  _restoreHandlers() {
     this.element.querySelector('.event__rollup-btn').addEventListener('click', this.#submitHandler);
+    this.element.addEventListener('submit', this.#submitHandler);
+    this.element.querySelector('.event__type-group').addEventListener('change', this.#changeTypeHandler);
+    this.element.querySelector('.event__input--destination').addEventListener('change', this.#changeDestinationHandler);
   }
 
   #submitHandler = (evt) => {
     evt.preventDefault();
-    this.#handleSubmit(this.#point);
+    this.#handleSubmit(EditFormView.parseStateToPoint(this._state));
   };
 
-  get template() {
-    return createEditFormViewTemplate(this.#point, this.#offers, this.#destinations);
+  #changeTypeHandler = (evt) => {
+    if (evt.target.closest('input')) {
+      this.updateElement({
+        type: evt.target.value
+      });
+    }
+  };
+
+  #changeDestinationHandler = (evt) => {
+    const selectedDestination = this.#destinations.find((destination) => destination.name === evt.target.value);
+
+    if (!selectedDestination) {
+      return;
+    }
+
+    this.updateElement({
+      destination: selectedDestination.id
+    });
+
+  };
+
+  //Сброс компонента к изначальному виду
+  reset(point) {
+    this.updateElement(EditFormView.parsePointToState(point));
+  }
+
+  static parsePointToState(point) {
+    return { ...point };
+  }
+
+  static parseStateToPoint(state) {
+    const point = { ...state };
+    return point;
   }
 }
