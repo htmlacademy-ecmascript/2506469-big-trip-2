@@ -36,9 +36,36 @@ const FilterMessage = {
 };
 
 const SortType = {
-  DAY: 'day',
-  TIME: 'time',
-  PRICE: 'price',
+  DAY:
+  {
+    text: 'day',
+    isDisabled: false,
+    isChecked: true
+  },
+  EVENT:
+  {
+    text: 'event',
+    isDisabled: true,
+    isChecked: false
+  },
+  TIME:
+  {
+    text: 'time',
+    isDisabled: false,
+    isChecked: false
+  },
+  PRICE:
+  {
+    text: 'price',
+    isDisabled: false,
+    isChecked: false
+  },
+  OFFER:
+  {
+    text: 'offer',
+    isDisabled: true,
+    isChecked: false
+  }
 };
 
 

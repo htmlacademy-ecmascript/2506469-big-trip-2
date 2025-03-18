@@ -72,18 +72,18 @@ export default class PointsListPresenter {
 
   #sortPoints(sortType) {
     switch (sortType) {
-      case SortType.DAY:
+      case SortType.DAY.text:
         this.#points.sort(sortPointByDate);
         break;
-      case SortType.TIME:
+      case SortType.TIME.text:
         this.#points.sort(sortPointByTime);
         break;
-      case SortType.PRICE:
+      case SortType.PRICE.text:
         this.#points.sort(sortPointByPrice);
         break;
-      default:
-        // Запишем в points исходный массив
-        this.#points = [...this.#sourcedPoints];
+      // default:
+      // Запишем в points исходный массив
+      // this.#points = [...this.#sourcedPoints];
     }
     this.#currentSortType = sortType;
   }
