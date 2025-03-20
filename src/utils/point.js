@@ -5,9 +5,21 @@ dayjs.extend(isBetween);
 function humanizeTaskDueDate(dueDate, dateFormat) {
   return dueDate ? dayjs(dueDate).format(dateFormat) : '';
 }
-function calculatesTravelTime(dateFrom, dateTo) {
+
+function calculatesTravelTimeInMinutes(dateFrom, dateTo) {
   const date1 = dayjs(dateTo);
   return date1.diff(dateFrom, 'minute');
+}
+
+function calculatesTravelTime(dateFrom, dateTo) {
+  const date1 = dayjs(dateTo);
+  const date2 = dayjs(dateFrom);
+
+  const days = date1.diff(date2, 'day');
+  const hours = date1.diff(date2.add(days, 'day'), 'hour');
+  const minutes = date1.diff(date2.add(days, 'day').add(hours, 'hour'), 'minute');
+
+  return `${days ? `${days}D` : ''} ${hours ? `${hours}H` : ''} ${minutes}`;
 }
 
 function createFormOffersTemplate(pointOffers, point) {
@@ -78,8 +90,8 @@ function sortPointByPrice(pointA, pointB) {
 }
 
 function sortPointByTime(pointA, pointB) {
-  const durationA = calculatesTravelTime(pointA.dateFrom, pointA.dateTo);
-  const durationB = calculatesTravelTime(pointB.dateFrom, pointB.dateTo);
+  const durationA = calculatesTravelTimeInMinutes(pointA.dateFrom, pointA.dateTo);
+  const durationB = calculatesTravelTimeInMinutes(pointB.dateFrom, pointB.dateTo);
   return durationB - durationA;
 }
 
