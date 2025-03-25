@@ -3,20 +3,31 @@ import { createFormOffersTemplate, humanizeTaskDueDate, createDestinationList, c
 import { DATE_TIME_FORMAT } from '../const.js';
 import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
+import he from 'he';
 
 function createPictures(pictures) {
-  return pictures
-    .map((picture) =>
-      `<img class="event__photo" src="${picture.src}" alt="${picture.description}">`
-    ).join('');
+  if (Array.isArray(pictures)) {
+    return pictures
+      .map((picture) =>
+        `<img class="event__photo" src="${picture.src}" alt="${picture.description}">`
+      )
+      .join('');
+  } else {
+    return '';
+  }
 }
 
 function createEditFormViewTemplate(point, offers, destinations) {
   const { type, basePrice, dateFrom, dateTo } = point;
 
-  const editFormPointDestination = destinations.find((destination) => destination.id === point.destination);
+  const editFormPointDestination = destinations.find((destination) => destination.id === point.destination) || {};
 
   const pointTypeOffer = offers.find((offer) => offer.type === point.type);
+
+  if (!pointTypeOffer) {
+    return '';
+  }
+
   const editFormOffersTemplate = createFormOffersTemplate(pointTypeOffer.offers, point.offers);
 
   const destinationPictures = editFormPointDestination
@@ -49,7 +60,7 @@ function createEditFormViewTemplate(point, offers, destinations) {
                     <label class="event__label  event__type-output" for="event-destination-1">
                     ${type}
                     </label>
-                    <input class="event__input  event__input--destination" id="event-destination-1" type="text" name="event-destination" value="${editFormPointDestination.name}" list="destination-list-1">
+                     <input class="event__input  event__input--destination" id="event-destination-1" type="text" name="event-destination" value="${editFormPointDestination?.name || ''}" list="destination-list-1">
                     <datalist id="destination-list-1">
                     ${destinationListTemplate}
                     </datalist>
@@ -66,7 +77,7 @@ function createEditFormViewTemplate(point, offers, destinations) {
                       <span class="visually-hidden">Price</span>
                       &euro;
                     </label>
-                    <input class="event__input  event__input--price" id="event-price-1" type="text" name="event-price" value="${basePrice}">
+                     <input class="event__input  event__input--price" id="event-price-1" type="text" name="event-price" value="${he.encode(String(basePrice))}">
                   </div>
                   <button class="event__save-btn  btn  btn--blue" type="submit">Save</button>
                   <button class="event__reset-btn" type="reset">Delete</button>
@@ -83,7 +94,7 @@ function createEditFormViewTemplate(point, offers, destinations) {
                   </section>
                   <section class="event__section  event__section--destination">
                     <h3 class="event__section-title  event__section-title--destination">Destination</h3>
-                    <p class="event__destination-description">${editFormPointDestination.description}</p>
+                    <p class="event__destination-description">${editFormPointDestination?.description || ''}</p>
                      <div class="event__photos-container">
                       <div class="event__photos-tape">
                         ${destinationPictures}
@@ -95,6 +106,7 @@ function createEditFormViewTemplate(point, offers, destinations) {
 }
 
 export default class EditFormView extends AbstractStatefulView {
+  #handleDeleteClick = null;
   #datepickerStart = null;
   #datepickerEnd = null;
 
@@ -102,11 +114,12 @@ export default class EditFormView extends AbstractStatefulView {
   #destinations = null;
   #handleSubmit = null;
 
-  constructor({ point, offers, destinations, onSubmit }) {
+  constructor({point, offers, destinations, onSubmit, onDeleteClick}) {
     super();
     this.#offers = offers;
     this.#destinations = destinations;
     this.#handleSubmit = onSubmit;
+    this.#handleDeleteClick = onDeleteClick;
 
     this._setState(EditFormView.parsePointToState(point));
     this._restoreHandlers();
@@ -121,6 +134,8 @@ export default class EditFormView extends AbstractStatefulView {
     this.element.addEventListener('submit', this.#submitHandler);
     this.element.querySelector('.event__type-group').addEventListener('change', this.#changeTypeHandler);
     this.element.querySelector('.event__input--destination').addEventListener('change', this.#changeDestinationHandler);
+    this.element.querySelector('.event__input--price').addEventListener('input', this.#changePriceHandler);
+    this.element.querySelector('.event__reset-btn').addEventListener('click', this.#formDeleteClickHandler);
 
     this.#setDatepicker();
   }
@@ -149,6 +164,18 @@ export default class EditFormView extends AbstractStatefulView {
       destination: selectedDestination.id
     });
 
+  };
+
+  #changePriceHandler = (evt) => {
+    this._setState({
+      basePrice: Number(evt.target.value)
+    });
+  };
+
+
+  #formDeleteClickHandler = (evt) => {
+    evt.preventDefault();
+    this.#handleDeleteClick(EditFormView.parseStateToPoint(this._state));
   };
 
   //Сброс компонента к изначальному виду
