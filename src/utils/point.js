@@ -95,4 +95,8 @@ function sortPointByTime(pointA, pointB) {
   return durationB - durationA;
 }
 
-export { humanizeTaskDueDate, calculatesTravelTime, createFormOffersTemplate, createDestinationList, createEventTypeItem, isPointsPassed, isPointsPlanned, isPointsCurrent, sortPointByDate, sortPointByPrice, sortPointByTime };
+function isDatesEqual(dateA, dateB) {
+  return (dateA === null && dateB === null) || dayjs(dateA).isSame(dateB, 'D');
+}
+
+export { humanizeTaskDueDate, calculatesTravelTime, createFormOffersTemplate, createDestinationList, createEventTypeItem, isPointsPassed, isPointsPlanned, isPointsCurrent, sortPointByDate, sortPointByPrice, sortPointByTime, isDatesEqual };

@@ -2,6 +2,8 @@ import { remove, render, replace } from '../framework/render.js';
 import PointView from '../view/point-view.js';
 import { isEscapeKey } from '../utils/common.js';
 import EditFormView from '../view/edit-form-view.js';
+import { UpdateType, UserAction } from '../const.js';
+import { isDatesEqual } from '../utils/point.js';
 
 const Mode = {
   VIEW: 'VIEW',
@@ -56,6 +58,7 @@ export default class PointPresenter {
       offers: this.#offers,
       destinations: this.#destinations,
       onSubmit: this.#handleSubmit,
+      onDeleteClick: this.#handleDeleteClick
     });
 
     //Проверяем не равны ли экзмепляры null
@@ -109,12 +112,35 @@ export default class PointPresenter {
   }
 
   #handleFavoriteClick = () => {
-    this.#handleDataChange({ ...this.#point, isFavorite: !this.#point.isFavorite });
+    this.#handleDataChange(
+      UserAction.UPDATE_POINT,
+      UpdateType.PATCH,
+      { ...this.#point, isFavorite: !this.#point.isFavorite });
   };
 
-  #handleSubmit = (point) => {
-    this.#handleDataChange(point);
+  #handleSubmit = (update) => {
+    // Проверяем, поменялись ли в задаче данные, которые попадают под фильтрацию,
+    // а значит требуют перерисовки списка - если таких нет, это PATCH-обновление
+    const isMinorUpdate =
+      this.#point.basePrice !== update.basePrice ||
+      !isDatesEqual(this.#point.dateFrom, update.dateFrom) ||
+      !isDatesEqual(this.#point.dateTo, update.dateTo);
+
+    this.#handleDataChange(
+      UserAction.UPDATE_POINT,
+      isMinorUpdate ? UpdateType.MINOR : UpdateType.PATCH,
+      update,
+    );
+
     this.#replaceFormToView();
+  };
+
+  #handleDeleteClick = (point) => {
+    this.#handleDataChange(
+      UserAction.DELETE_POINT,
+      UpdateType.MINOR,
+      point,
+    );
   };
 
   #escKeydownHandler = (evt) => {
