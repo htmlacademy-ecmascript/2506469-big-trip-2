@@ -76,7 +76,8 @@ export default class PointPresenter {
 
     //Проверям установлен ли режим редктирования
     if (this.#mode === Mode.EDITING) {
-      replace(this.#editFormComponent, prevEditFormComponent);
+      replace(this.#pointComponent, prevEditFormComponent);
+      this.#mode = Mode.DEFAULT;
     }
 
     //Удаляем старые компоненты
@@ -97,7 +98,41 @@ export default class PointPresenter {
     }
   }
 
-  //Бывшие функции метода renderPoint стали полноценными функциями
+  setSaving() {
+    if (this.#mode === Mode.EDITING) {
+      this.#editFormComponent.updateElement({
+        isDisabled: true,
+        isSaving: true,
+      });
+    }
+  }
+
+  setDeleting() {
+    if (this.#mode === Mode.EDITING) {
+      this.#editFormComponent.updateElement({
+        isDisabled: true,
+        isDeleting: true,
+      });
+    }
+  }
+
+  setAborting() {
+    if (this.#mode === Mode.DEFAULT) {
+      this.#pointComponent.shake();
+      return;
+    }
+
+    const resetFormState = () => {
+      this.#editFormComponent.updateElement({
+        isDisabled: false,
+        isSaving: false,
+        isDeleting: false,
+      });
+    };
+
+    this.#editFormComponent.shake(resetFormState);
+  }
+
   #replaceViewToForm() {
     replace(this.#editFormComponent, this.#pointComponent);
     document.addEventListener('keydown', this.#escKeydownHandler);

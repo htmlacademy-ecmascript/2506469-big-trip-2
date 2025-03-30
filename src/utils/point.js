@@ -27,7 +27,7 @@ function createFormOffersTemplate(pointOffers, point) {
     .map((offer) => {
       const checked = point.includes(offer.id) ? 'checked' : '';
       return `<div class="event__offer-selector">
-                        <input class="event__offer-checkbox  visually-hidden" id="${offer.id}" type="checkbox" name="event-offer-luggage" ${checked}>
+                         <input class="event__offer-checkbox  visually-hidden" id="${offer.id}" type="checkbox" name="event-offer-luggage" ${checked} ${point.isDisabled ? 'disabled' : ''}>
                         <label class="event__offer-label" for="${offer.id}">
                           <span class="event__offer-title">${offer.title}</span>
                           &plus;&euro;&nbsp;

@@ -1,8 +1,23 @@
-import { destinations } from '../mock/destinations.js';
+import Observable from '../framework/observable.js';
+export default class DestinationsModel extends Observable {
+  #destinations = [];
+  #pointsApiService = null;
 
-export default class DestinationsModel {
+  constructor({ pointsApiService }) {
+    super();
+    this.#pointsApiService = pointsApiService;
 
-  #destinations = destinations;
+  }
+
+  async init() {
+    try {
+      this.#destinations = await this.#pointsApiService.destinations;
+    } catch (err) {
+      this.#destinations = [];
+    }
+
+    this._notify(UpdateType.INIT);
+  }
 
   //Получим данные из свойства destinations
   get destinations() {
