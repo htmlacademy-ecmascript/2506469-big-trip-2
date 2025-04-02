@@ -18,7 +18,7 @@ function createPictures(pictures) {
 }
 
 function createEditFormViewTemplate(point, offers, destinations) {
-  const { type, basePrice, dateFrom, dateTo } = point;
+  const { type, basePrice, dateFrom, dateTo, isDisabled, isSaving, isDeleting } = point;
 
   const editFormPointDestination = destinations.find((destination) => destination.id === point.destination) || {};
 
@@ -48,7 +48,7 @@ function createEditFormViewTemplate(point, offers, destinations) {
                       <span class="visually-hidden">Choose event type</span>
                       <img class="event__type-icon" width="17" height="17" src="img/icons/${type}.png" alt="Event type icon">
                     </label>
-                    <input class="event__type-toggle  visually-hidden" id="event-type-toggle-1" type="checkbox">
+                     <input class="event__type-toggle  visually-hidden" id="event-type-toggle-1" type="checkbox" ${isDisabled ? 'disabled' : ''}>
                     <div class="event__type-list">
                       <fieldset class="event__type-group">
                         <legend class="visually-hidden">Event type</legend>
@@ -60,27 +60,27 @@ function createEditFormViewTemplate(point, offers, destinations) {
                     <label class="event__label  event__type-output" for="event-destination-1">
                     ${type}
                     </label>
-                     <input class="event__input  event__input--destination" id="event-destination-1" type="text" name="event-destination" value="${editFormPointDestination?.name || ''}" list="destination-list-1">
+                      <input class="event__input  event__input--destination" id="event-destination-1" type="text" name="event-destination" value="${editFormPointDestination?.name || ''}" list="destination-list-1" ${isDisabled ? 'disabled' : ''}>
                     <datalist id="destination-list-1">
                     ${destinationListTemplate}
                     </datalist>
                   </div>
                   <div class="event__field-group  event__field-group--time">
                     <label class="visually-hidden" for="event-start-time-1">From</label>
-                    <input class="event__input  event__input--time" id="event-start-time-1" type="text" name="event-start-time" value="${startDate}">
+                     <input class="event__input  event__input--time" id="event-start-time-1" type="text" name="event-start-time" value="${startDate}" ${isDisabled ? 'disabled' : ''}>
                     &mdash;
                     <label class="visually-hidden" for="event-end-time-1">To</label>
-                    <input class="event__input  event__input--time" id="event-end-time-1" type="text" name="event-end-time" value="${endDate}">
+                     <input class="event__input  event__input--time" id="event-end-time-1" type="text" name="event-end-time" value="${endDate}" ${isDisabled ? 'disabled' : ''}>
                   </div>
                   <div class="event__field-group  event__field-group--price">
                     <label class="event__label" for="event-price-1">
                       <span class="visually-hidden">Price</span>
                       &euro;
                     </label>
-                     <input class="event__input  event__input--price" id="event-price-1" type="text" name="event-price" value="${he.encode(String(basePrice))}">
+                      <input class="event__input  event__input--price" id="event-price-1" type="text" name="event-price" value="${he.encode(String(basePrice))}" ${isDisabled ? 'disabled' : ''}>
                   </div>
-                  <button class="event__save-btn  btn  btn--blue" type="submit">Save</button>
-                  <button class="event__reset-btn" type="reset">Delete</button>
+                  <button class="event__save-btn  btn  btn--blue" type="submit"${isDisabled ? 'disabled' : ''}>${isSaving ? 'Saving...' : 'Save'}</button>
+                  <button class="event__reset-btn" type="reset"${isDisabled ? 'disabled' : ''}>${isDeleting ? 'Deleting...' : 'Delete'}</button>
                   <button class="event__rollup-btn" type="button">
                     <span class="visually-hidden">Open event</span>
                   </button>
@@ -114,7 +114,7 @@ export default class EditFormView extends AbstractStatefulView {
   #destinations = null;
   #handleSubmit = null;
 
-  constructor({point, offers, destinations, onSubmit, onDeleteClick}) {
+  constructor({ point, offers, destinations, onSubmit, onDeleteClick }) {
     super();
     this.#offers = offers;
     this.#destinations = destinations;
@@ -184,11 +184,21 @@ export default class EditFormView extends AbstractStatefulView {
   }
 
   static parsePointToState(point) {
-    return { ...point };
+    return {
+      ...point,
+      isDisabled: false,
+      isSaving: false,
+      isDeleting: false
+    };
   }
 
   static parseStateToPoint(state) {
     const point = { ...state };
+
+    delete point.isDisabled;
+    delete point.isSaving;
+    delete point.isDeleting;
+
     return point;
   }
 
@@ -196,7 +206,7 @@ export default class EditFormView extends AbstractStatefulView {
     this.#datepickerStart = flatpickr(
       this.element.querySelector('#event-start-time-1'), {
       dateFormat: 'd/m/y H:i',
-      defaultDate: this._state.startDate,
+      defaultDate: this._state.dateFrom,
       onChange: this.#changeStartDateHandler
     }
     );
@@ -204,7 +214,7 @@ export default class EditFormView extends AbstractStatefulView {
     this.#datepickerEnd = flatpickr(
       this.element.querySelector('#event-end-time-1'), {
       dateFormat: 'd/m/y H:i',
-      defaultDate: this._state.endDate,
+      defaultDate: this._state.dateTo,
       minDate: this._state.dateFrom,
       onChange: this.#changeEndDateHandler
     }
@@ -213,14 +223,14 @@ export default class EditFormView extends AbstractStatefulView {
 
   #changeStartDateHandler = ([userDate]) => {
     this.updateElement({
-      startDate: userDate,
+      dateFrom: userDate,
     });
     this.#datepickerEnd.set('minDate', userDate);
   };
 
   #changeEndDateHandler = ([userDate]) => {
     this.updateElement({
-      endDate: userDate,
+      dateTo: userDate,
     });
   };
 

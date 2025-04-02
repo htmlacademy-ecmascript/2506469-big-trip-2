@@ -1,8 +1,20 @@
-import { offers } from '../mock/offers.js';
+import Observable from '../framework/observable.js';
+export default class OffersModel extends Observable {
+  #pointsApiService = null;
+  #offers = [];
 
-export default class OffersModel {
+  constructor({ pointsApiService }) {
+    super();
+    this.#pointsApiService = pointsApiService;
+  }
 
-  #offers = offers;
+  async init() {
+    try {
+      this.#offers = await this.#pointsApiService.offers;
+    } catch (error) {
+      this.#offers = [];
+    }
+  }
 
   //Получим данные из свойства offers
   get offers() {
