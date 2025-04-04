@@ -52,7 +52,7 @@ function createPointViewTemplate(point, offers, destinations) {
                     &mdash;
                     <time class="event__end-time" datetime="${dateTo}">${endTime}</time>
                   </p>
-                  <p class="event__duration">${travelTime}М</p>
+                  <p class="event__duration">${travelTime}</p>
                 </div>
                 <p class="event__price">
                   &euro;&nbsp;<span class="event__price-value">${he.encode(String(basePrice))}</span>
