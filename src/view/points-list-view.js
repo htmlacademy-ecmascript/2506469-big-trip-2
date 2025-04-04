@@ -1,7 +1,5 @@
 import AbstractView from '../framework/view/abstract-view.js';
 
-//идет после сортировки
-
 function createPointsListTemplate() {
   return ('<ul class="trip-events__list"></ul>');
 }

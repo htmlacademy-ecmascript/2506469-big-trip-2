@@ -2,20 +2,11 @@ import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 dayjs.extend(isBetween);
 
-function humanizeTaskDueDate(dueDate, dateFormat) {
-  return dueDate ? dayjs(dueDate).format(dateFormat) : '';
-}
+const calculatesTravelTimeInMinutes = (dateFrom, dateTo) => dayjs(dateTo).diff(dateFrom, 'minute');
 
-function calculatesTravelTimeInMinutes(dateFrom, dateTo) {
-  const date1 = dayjs(dateTo);
-  return date1.diff(dateFrom, 'minute');
-}
+const formatsWithLeadingZero = (value) => String(value).padStart(2, '0');
 
-function formatWithLeadingZero(value) {
-  return String(value).padStart(2, '0');
-}
-
-function calculatesTravelTime(dateFrom, dateTo) {
+const calculatesTravelTime = (dateFrom, dateTo) => {
   const date1 = dayjs(dateTo);
   const date2 = dayjs(dateFrom);
 
@@ -23,63 +14,52 @@ function calculatesTravelTime(dateFrom, dateTo) {
   const hours = date1.diff(date2.add(days, 'day'), 'hour');
   const minutes = date1.diff(date2.add(days, 'day').add(hours, 'hour'), 'minute');
 
-  // Применяем форматирование для дней, часов и минут
-  const formattedDays = days ? `${formatWithLeadingZero(days)}D` : '';
-  const formattedHours = hours || days ? `${formatWithLeadingZero(hours)}H` : '00H'; // Если часов нет, отображаем 00H
-  const formattedMinutes = minutes || hours || days ? `${formatWithLeadingZero(minutes)}M` : '00M'; // Если минут нет, отображаем 00M
+  return [
+    days ? `${formatsWithLeadingZero(days)}D` : '',
+    hours || days ? `${formatsWithLeadingZero(hours)}H` : '00H',
+    minutes || hours || days ? `${formatsWithLeadingZero(minutes)}M` : '00M'
+  ].join(' ').trim();
+};
 
-  return `${formattedDays} ${formattedHours} ${formattedMinutes}`.trim();
-}
+const isPointsPassed = (date) => dayjs(date).isBefore(dayjs(), 'day');
 
-function isPointsPassed(dueDate) {
-  const now = dayjs();
-  return dayjs(dueDate).isBefore(now, 'day');
-}
+const isPointsPlanned = (date) => dayjs(date).isAfter(dayjs(), 'day');
 
-function isPointsPlanned(dueDate) {
-  const now = dayjs();
-  return dayjs(dueDate).isAfter(now, 'day');
-}
+const isPointsCurrent = (startDate, endDate) => dayjs().isBetween(dayjs(startDate), dayjs(endDate), 'day', '[]');
 
-function isPointsCurrent(startDate, endDate) {
-  const now = dayjs();
-  return now.isBetween(dayjs(startDate), dayjs(endDate), 'day', '[]');
-}
-
-function getWeightForNullDate(dateA, dateB) {
+const getWeightForNullDate = (dateA, dateB) => {
   if (dateA === null && dateB === null) {
     return 0;
   }
-
   if (dateA === null) {
     return 1;
   }
-
   if (dateB === null) {
     return -1;
   }
-
   return null;
-}
+};
 
-function sortPointByDate(pointA, pointB) {
-  const weight = getWeightForNullDate(pointA.dateFrom, pointB.dateFrom);
+const sortPointsByDate = (pointA, pointB) => getWeightForNullDate(pointA.dateFrom, pointB.dateFrom) ?? dayjs(pointA.dateFrom).diff(dayjs(pointB.dateFrom));
 
-  return weight ?? dayjs(pointA.dateFrom).diff(dayjs(pointB.dateFrom));
-}
+const sortPointsByPrice = (pointA, pointB) => pointB.basePrice - pointA.basePrice;
 
-function sortPointByPrice(pointA, pointB) {
-  return pointB.basePrice - pointA.basePrice;
-}
+const sortPointsByTime = (pointA, pointB) => calculatesTravelTimeInMinutes(pointB.dateFrom, pointB.dateTo) - calculatesTravelTimeInMinutes(pointA.dateFrom, pointA.dateTo);
 
-function sortPointByTime(pointA, pointB) {
-  const durationA = calculatesTravelTimeInMinutes(pointA.dateFrom, pointA.dateTo);
-  const durationB = calculatesTravelTimeInMinutes(pointB.dateFrom, pointB.dateTo);
-  return durationB - durationA;
-}
+const isDatesEqual = (dateA, dateB) => (dateA === null && dateB === null) || dayjs(dateA).isSame(dateB, 'D');
 
-function isDatesEqual(dateA, dateB) {
-  return (dateA === null && dateB === null) || dayjs(dateA).isSame(dateB, 'D');
-}
+const getOffersByType = (type, offers) => offers.find((offer) => offer.type === type)?.offers || [];
 
-export { humanizeTaskDueDate, calculatesTravelTime, isPointsPassed, isPointsPlanned, isPointsCurrent, sortPointByDate, sortPointByPrice, sortPointByTime, isDatesEqual };
+const getPriceWithoutOffers = (points) => points.reduce((sum, price) => sum + price.basePrice, 0);
+
+const getPointOffersPrice = (point, allOffers) => {
+  const pointOffers = getOffersByType(point.type, allOffers);
+  const includesPointOffers = pointOffers.filter((offers) => point.offers.includes(offers.id));
+  return includesPointOffers.reduce((sum, currentPoint) => sum + currentPoint.price, 0);
+};
+
+const getDestination = (id, destinations) => destinations.find((destination) => destination.id === id);
+
+const getCurrentDate = (date) => dayjs(date).format('DD MMM');
+
+export { calculatesTravelTimeInMinutes, calculatesTravelTime, isPointsPassed, isPointsPlanned, isPointsCurrent, sortPointsByDate, sortPointsByPrice, sortPointsByTime, isDatesEqual, getPriceWithoutOffers, getPointOffersPrice, getDestination, getCurrentDate };

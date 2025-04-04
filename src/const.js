@@ -74,5 +74,14 @@ const UpdateType = {
   INIT: 'INIT',
 };
 
+const TimeLimit = {
+  LOWER_LIMIT: 350,
+  UPPER_LIMIT: 1000,
+};
 
-export { TIME_FORMAT, DATE_FORMAT, DATE_TIME_FORMAT, POINT_TYPES, DESTINATIONS, FilterType, SortType, UserAction, UpdateType };
+const Mode = {
+  VIEW: 'VIEW',
+  EDITING: 'EDITING',
+};
+
+export { TIME_FORMAT, DATE_FORMAT, DATE_TIME_FORMAT, POINT_TYPES, DESTINATIONS, FilterType, SortType, UserAction, UpdateType, TimeLimit, Mode };
