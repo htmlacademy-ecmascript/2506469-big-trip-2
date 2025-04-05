@@ -21,6 +21,7 @@ function createFiltersViewTemplate(filterItems, currentFilterType) {
   const filterItemsTemplate = filterItems
     .map((filter) => createFilterItemTemplate(filter, currentFilterType))
     .join('');
+
   return `<form class="trip-filters" action="#" method="get">
                ${filterItemsTemplate}
                 <button class="visually-hidden" type="submit">Accept filter</button>
@@ -31,7 +32,6 @@ export default class FiltersView extends AbstractView {
   #filters = null;
   #currentFilter = null;
   #handleFilterTypeChange = null;
-  // Возвращает разметку компонента
 
   constructor({ filters, currentFilterType, onFilterTypeChange }) {
     super();

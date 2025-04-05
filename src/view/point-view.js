@@ -1,12 +1,14 @@
 import AbstractView from '../framework/view/abstract-view.js';
-import { humanizeTaskDueDate, calculatesTravelTime } from '../utils/point.js';
+import { humanizeDate } from '../utils/common.js';
+import { calculatesTravelTime } from '../utils/point.js';
 import { TIME_FORMAT, DATE_FORMAT } from '../const.js';
 import he from 'he';
 
 function createPointOffersTemplate(pointOffers, point) {
   if (!pointOffers || pointOffers.length === 0) {
-    return ''; // Возвращаем пустую строку, если нет предложений
+    return '';
   }
+
   return pointOffers
     .map((offer) =>
       point.includes(offer.id)
@@ -21,27 +23,22 @@ function createPointOffersTemplate(pointOffers, point) {
 }
 
 function createPointViewTemplate(point, offers, destinations) {
-
   const { basePrice, type, dateFrom, dateTo, isFavorite } = point;
 
   const pointDestination = destinations.find((destination) => destination.id === point.destination);
-
   const pointTypeOffer = offers.find((offer) => offer.type === point.type) || { offers: [] };
-
-  // Передай правильные предложения в функцию createPointOffersTemplate
   const pointOffersTemplate = createPointOffersTemplate(pointTypeOffer.offers, point.offers);
 
-  const date = humanizeTaskDueDate(dateTo, DATE_FORMAT);
-  const startTime = humanizeTaskDueDate(dateFrom, TIME_FORMAT);
-  const endTime = humanizeTaskDueDate(dateTo, TIME_FORMAT);
+  const date = humanizeDate(dateFrom, DATE_FORMAT);
+  const startTime = humanizeDate(dateFrom, TIME_FORMAT);
+  const endTime = humanizeDate(dateTo, TIME_FORMAT);
   const travelTime = calculatesTravelTime(dateFrom, dateTo);
 
-  //Проверяем в избранном ли задача
   const favoriteClassName = isFavorite ? 'event__favorite-btn--active' : '';
 
   return `<li class="trip-events__item">
               <div class="event">
-                <time class="event__date" datetime="${dateTo}">${date}</time>
+                <time class="event__date" datetime="${dateFrom}">${date}</time>
                 <div class="event__type">
                   <img class="event__type-icon" width="42" height="42" src="img/icons/${type}.png" alt="Event type icon">
                 </div>
@@ -86,7 +83,7 @@ export default class PointView extends AbstractView {
   #handleFavoriteClick = null;
 
   constructor({ point, offers, destinations, onClick, onFavoriteClick }) {
-    super();//вызываем конструктор родительского класса AbstractView
+    super();
     this.#point = point;
     this.#offers = offers;
     this.#destinations = destinations;
@@ -94,6 +91,10 @@ export default class PointView extends AbstractView {
     this.element.querySelector('.event__rollup-btn').addEventListener('click', this.#clickHandler);
     this.#handleFavoriteClick = onFavoriteClick;
     this.element.querySelector('.event__favorite-btn').addEventListener('click', this.#favoriteClickHandler);
+  }
+
+  get template() {
+    return createPointViewTemplate(this.#point, this.#offers, this.#destinations);
   }
 
   #clickHandler = (evt) => {
@@ -105,9 +106,4 @@ export default class PointView extends AbstractView {
     evt.preventDefault();
     this.#handleFavoriteClick();
   };
-
-  get template() {
-    //Передаем аргументом объект с описанием точки
-    return createPointViewTemplate(this.#point, this.#offers, this.#destinations);
-  }
 }

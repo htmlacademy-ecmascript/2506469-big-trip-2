@@ -1,5 +1,5 @@
 import AbstractStatefulView from '../framework/view/abstract-stateful-view.js';
-import { humanizeTaskDueDate } from '../utils/point.js';
+import { convertDateToISO, humanizeDate } from '../utils/common.js';
 import { DATE_TIME_FORMAT } from '../const.js';
 import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
@@ -49,7 +49,7 @@ function createPictures(pictures) {
   }
 }
 
-function createEditFormViewTemplate(point, offers, destinations) {
+function createEditFormViewTemplate(point, offers, destinations, isCreating) {
   const { type, basePrice, dateFrom, dateTo, isDisabled, isSaving, isDeleting } = point;
 
   const editFormPointDestination = destinations.find((destination) => destination.id === point.destination) || {};
@@ -70,12 +70,21 @@ function createEditFormViewTemplate(point, offers, destinations) {
 
   const eventTypeItemTemplate = createEventTypeItem(offers);
 
-  const startDate = humanizeTaskDueDate(dateFrom, DATE_TIME_FORMAT);
-  const endDate = humanizeTaskDueDate(dateTo, DATE_TIME_FORMAT);
+  const startDate = humanizeDate(dateFrom, DATE_TIME_FORMAT);
+  const endDate = humanizeDate(dateTo, DATE_TIME_FORMAT);
 
   const hasDestinationContent = editFormPointDestination.description || destinationPictures;
-  const hasOffers = pointTypeOffer.offers && pointTypeOffer.offers.length > 0;// Проверка наличия офферов
 
+  const hasOffers = pointTypeOffer.offers && pointTypeOffer.offers.length > 0;
+
+  let resetButtonText;
+  if (isDeleting) {
+    resetButtonText = 'Deleting...';
+  } else if (isCreating) {
+    resetButtonText = 'Cancel';
+  } else {
+    resetButtonText = 'Delete';
+  }
 
   return `<li class="trip-events__item">
               <form class="event event--edit" action="#" method="post">
@@ -93,6 +102,7 @@ function createEditFormViewTemplate(point, offers, destinations) {
                       </fieldset>
                     </div>
                   </div>
+
                   <div class="event__field-group  event__field-group--destination">
                     <label class="event__label  event__type-output" for="event-destination-1">
                     ${type}
@@ -102,13 +112,15 @@ function createEditFormViewTemplate(point, offers, destinations) {
                     ${destinationListTemplate}
                     </datalist>
                   </div>
+
                   <div class="event__field-group  event__field-group--time">
                     <label class="visually-hidden" for="event-start-time-1">From</label>
-                     <input class="event__input  event__input--time" id="event-start-time-1" type="text" name="event-start-time" value="${startDate}" ${isDisabled ? 'disabled' : ''}>
+                     <input class="event__input  event__input--time" id="event-start-time-1" type="text" name="event-start-time" value="${isCreating ? '' : startDate}" ${isDisabled ? 'disabled' : ''}>
                     &mdash;
                     <label class="visually-hidden" for="event-end-time-1">To</label>
-                     <input class="event__input  event__input--time" id="event-end-time-1" type="text" name="event-end-time" value="${endDate}" ${isDisabled ? 'disabled' : ''}>
+                     <input class="event__input  event__input--time" id="event-end-time-1" type="text" name="event-end-time" value="${isCreating ? '' : endDate}" ${isDisabled ? 'disabled' : ''}>
                   </div>
+
                   <div class="event__field-group  event__field-group--price">
                     <label class="event__label" for="event-price-1">
                       <span class="visually-hidden">Price</span>
@@ -116,11 +128,14 @@ function createEditFormViewTemplate(point, offers, destinations) {
                     </label>
                       <input class="event__input  event__input--price" id="event-price-1" type="text" name="event-price" value="${he.encode(String(basePrice))}" ${isDisabled ? 'disabled' : ''}>
                   </div>
-                  <button class="event__save-btn  btn  btn--blue" type="submit"${isDisabled ? 'disabled' : ''}>${isSaving ? 'Saving...' : 'Save'}</button>
-                  <button class="event__reset-btn" type="reset"${isDisabled ? 'disabled' : ''}>${isDeleting ? 'Deleting...' : 'Delete'}</button>
-                  <button class="event__rollup-btn" type="button">
-                    <span class="visually-hidden">Open event</span>
-                  </button>
+
+                  <button class="event__save-btn  btn  btn--blue"
+                  type="submit" ${isDisabled ? 'disabled' : ''}>${isSaving ? 'Saving...' : 'Save'}</button>
+                  <button class="event__reset-btn" type="reset">${resetButtonText}</button>
+                  ${!isCreating ? `
+                    <button class="event__rollup-btn" type="button">
+                      <span class="visually-hidden">Open event</span>
+                    </button>` : ''}
                 </header>
                 <section class="event__details">
                 ${hasOffers ? `
@@ -149,18 +164,24 @@ function createEditFormViewTemplate(point, offers, destinations) {
 
 export default class EditFormView extends AbstractStatefulView {
   #handleDeleteClick = null;
+  #datepicker = null;
   #datepickerStart = null;
   #datepickerEnd = null;
 
   #offers = null;
   #destinations = null;
   #handleSubmit = null;
+  #handleDiscardChanges = null;
+  #isCreating = false;
 
-  constructor({ point, offers, destinations, onSubmit, onDeleteClick }) {
+  constructor({ point, offers, destinations, isCreating, onSubmit, onDiscardChanges, onDeleteClick }) {
     super();
+
     this.#offers = offers;
     this.#destinations = destinations;
+    this.#isCreating = isCreating;
     this.#handleSubmit = onSubmit;
+    this.#handleDiscardChanges = onDiscardChanges;
     this.#handleDeleteClick = onDeleteClick;
 
     this._setState(EditFormView.parsePointToState(point));
@@ -168,12 +189,15 @@ export default class EditFormView extends AbstractStatefulView {
   }
 
   get template() {
-    return createEditFormViewTemplate(this._state, this.#offers, this.#destinations);
+    return createEditFormViewTemplate(this._state, this.#offers, this.#destinations, this.#isCreating);
   }
 
   _restoreHandlers() {
-    this.element.querySelector('.event__rollup-btn').addEventListener('click', this.#submitHandler);
-    this.element.addEventListener('submit', this.#submitHandler);
+    if (this.element.querySelector('.event__rollup-btn')) {
+      this.element.querySelector('.event__rollup-btn')
+        .addEventListener('click', this.#handleDiscardChanges);
+    }
+    this.element.querySelector('form').addEventListener('submit', this.#submitHandler);
     this.element.querySelector('.event__type-group').addEventListener('change', this.#changeTypeHandler);
     this.element.querySelector('.event__input--destination').addEventListener('change', this.#changeDestinationHandler);
     this.element.querySelector('.event__input--price').addEventListener('input', this.#changePriceHandler);
@@ -186,6 +210,19 @@ export default class EditFormView extends AbstractStatefulView {
     this.#setDatepicker();
   }
 
+  removeElement() {
+    super.removeElement();
+
+    if (this.#datepicker) {
+      this.#datepicker.destroy();
+      this.#datepicker = null;
+    }
+  }
+
+  reset(point) {
+    this.updateElement(EditFormView.parsePointToState(point));
+  }
+
   #submitHandler = (evt) => {
     evt.preventDefault();
     this.#handleSubmit(EditFormView.parseStateToPoint(this._state));
@@ -194,7 +231,8 @@ export default class EditFormView extends AbstractStatefulView {
   #changeTypeHandler = (evt) => {
     if (evt.target.closest('input')) {
       this.updateElement({
-        type: evt.target.value
+        type: evt.target.value,
+        offers: []
       });
     }
   };
@@ -232,16 +270,52 @@ export default class EditFormView extends AbstractStatefulView {
     });
   };
 
-
   #formDeleteClickHandler = (evt) => {
     evt.preventDefault();
     this.#handleDeleteClick(EditFormView.parseStateToPoint(this._state));
   };
 
-  //Сброс компонента к изначальному виду
-  reset(point) {
-    this.updateElement(EditFormView.parsePointToState(point));
+  #setDatepicker() {
+    const [dateStartElement, dateEndElement] = this.element.querySelectorAll('.event__input--time');
+    const commonConfig = {
+      dateFormat: 'd/m/y H:i',
+      enableTime: true,
+      locale: { firstDayOfWeek: 1 },
+      'time_24hr': true
+    };
+
+    this.#datepickerStart = flatpickr(
+      dateStartElement,
+      {
+        ...commonConfig,
+        defaultDate: this.#isCreating ? '' : this._state.dateFrom,
+        onChange: this.#changeStartDateHandler,
+        maxDate: this._state.dateTo || ''
+      }
+    );
+
+    this.#datepickerEnd = flatpickr(
+      dateEndElement,
+      {
+        ...commonConfig,
+        defaultDate: this.#isCreating ? '' : this._state.dateTo,
+        onChange: this.#changeEndDateHandler,
+        minDate: this._state.dateFrom || ''
+      }
+    );
   }
+
+  #changeStartDateHandler = ([userDate]) => {
+    const isoDate = convertDateToISO(userDate);
+    this._setState({ dateFrom: isoDate });
+    this.#datepickerEnd.set('minDate', isoDate);
+  };
+
+  #changeEndDateHandler = ([userDate]) => {
+    const isoDate = convertDateToISO(userDate);
+    this._setState({ dateTo: isoDate });
+    this.#datepickerStart.set('maxDate', isoDate);
+  };
 
   static parsePointToState(point) {
     return {
@@ -261,51 +335,4 @@ export default class EditFormView extends AbstractStatefulView {
 
     return point;
   }
-
-  #setDatepicker() {
-    this.#datepickerStart = flatpickr(
-      this.element.querySelector('#event-start-time-1'), {
-      dateFormat: 'd/m/y H:i',
-      defaultDate: this._state.dateFrom,
-      onChange: this.#changeStartDateHandler
-    }
-    );
-
-    this.#datepickerEnd = flatpickr(
-      this.element.querySelector('#event-end-time-1'), {
-      dateFormat: 'd/m/y H:i',
-      defaultDate: this._state.dateTo,
-      minDate: this._state.dateFrom,
-      onChange: this.#changeEndDateHandler
-    }
-    );
-  }
-
-  #changeStartDateHandler = ([userDate]) => {
-    this.updateElement({
-      dateFrom: userDate,
-    });
-    this.#datepickerEnd.set('minDate', userDate);
-  };
-
-  #changeEndDateHandler = ([userDate]) => {
-    this.updateElement({
-      dateTo: userDate,
-    });
-  };
-
-  removeElement() {
-    super.removeElement();
-
-    if (this.#datepickerStart) {
-      this.#datepickerStart.destroy();
-      this.#datepickerStart = null;
-    }
-
-    if (this.#datepickerEnd) {
-      this.#datepickerEnd.destroy();
-      this.#datepickerEnd = null;
-    }
-  }
-
 }
